@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Vision MG-idol</title>
+    <script src="https://code.jquery.com/jquery-3.4.1.js"
+        integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU="crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js"></script>
+    <script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+    <style type="text/css">
+        body{
+            font-family:標楷體;
+            font-size: 24px;
+            background-image: linear-gradient(to right, #fa709a 0%, #fee140 100%);
+            text-align: center;
+            
+            }
+    </style>
+    
+</head>
+<body>
+    <script type="text/javascript">
+        function processImage() {
+            // **********************************************
+            // *** Update or verify the following values. ***
+            // **********************************************
+    
+            let subscriptionKey = '2966cacb903e46c09ac6abaa8b5a5c21';
+            let endpoint = 'https://southcentralus.api.cognitive.microsoft.com/customvision/v3.0/Prediction/56e1286a-ff9d-4b7a-b66a-2a89caf218b3/classify/iterations/Iteration2/url';
+            if (!subscriptionKey) { 
+                throw new Error('Set your environment variables for your subscription key and endpoint.'); 
+            }
+            
+            // Display the image.
+            var sourceImageUrl = document.getElementById("inputImage").value;
+            document.querySelector("#sourceImage").src = sourceImageUrl;
+    
+            // Make the REST API call.
+            $.ajax({
+                url: endpoint + "?",
+    
+                // Request headers.
+                beforeSend: function(xhrObj){
+                    xhrObj.setRequestHeader("Content-Type","application/json");
+                    xhrObj.setRequestHeader("Prediction-Key", subscriptionKey);
+                },
+    
+                type: "POST",
+    
+                // Request body.
+                data: '{"url": ' + '"' + sourceImageUrl + '"}',
+            })
+    
+            .done(function(data) {
+                // Show formatted JSON on webpage.
+                $("#responseTextArea").val(JSON.stringify(data, null, 2));
+        var barData = {
+                        labels: [data.predictions[0].tagName, data.predictions[1].tagName, data.predictions[2].tagName, data.predictions[3].tagName, data.predictions[4].tagName],
+                         datasets: [
+                            {
+                                
+                                label: "預測結果百分比",
+                                //backgroundColor: "rgba(58,203,254,1)",
+                                backgroundColor: [
+                                    '#008087',
+                                    '#5921AD',
+                                    '#69AEFF',
+                                    '#7BE888',
+                                    '#FFA664'
+                                ],
+                                strokeColor: "rgba(220,220,220,0.8)",
+                                highlightFill: "rgba(220,220,220,0.75)",
+                                highlightStroke: "rgba(220,220,220,1)",
+                                data: [data.predictions[0].probability*100, data.predictions[1].probability*100,data.predictions[2].probability*100, data.predictions[3].probability*100, data.predictions[4].probability*100],
+                            } 
+                        ]
+                    };
+                    
+    
+                    // doughnut chart
+                    var ctx = document.getElementById("barChart");
+                    var myRadarChart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: barData,
+                        options:{
+                            responsive: true,
+                            maintainAspectRatio: true,
+                        }
+                    });
+                    var resultjs;
+                    resultjs=data.predictions[0].tagName+data.predictions[0].probability*100+"\n"+
+                            data.predictions[1].tagName+data.predictions[1].probability*100+"\n"+
+                            data.predictions[2].tagName+data.predictions[2].probability*100+"\n"+ 
+                            data.predictions[3].tagName+data.predictions[3].probability*100+"\n"+
+                            data.predictions[4].tagName+data.predictions[4].probability*100+"\n"+
+                            "最終結果：該圖片與"+data.predictions[0].tagName+"最相似";
+                    alert(resultjs);
+            })
+    
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                // Display error message.
+                var errorString = (errorThrown === "") ? "Error. " :
+                    errorThrown + " (" + jqXHR.status + "): ";
+                errorString += (jqXHR.responseText === "") ? "" :
+                    jQuery.parseJSON(jqXHR.responseText).message;
+                alert(errorString);
+            });
+    
+        };
+    </script>
+
+
+
+    <h3>Hey,QQnice teacher,This is a Custom Vision MG-idol Website</h3>
+    <h4>You can test your photo in this website.</h5> 
+    <h4>Click the button to try!</h5>
+    
+    <input type="text" name="inputImage" id="inputImage" style="width: 550px;height: 40px;font-size: 20px;" value="https://i.ntdtv.com/assets/uploads/2019/10/1-473-600x400.jpg">
+    <button onclick="processImage()" style="background-color: #57E0FF;border-radius: 5px; border-color: white;top: -5px;">
+        <font style="vertical-align: inherit;">
+            <font style="font-size: 30px;">開始分析圖片</font>
+        </font>
+    </button><br><br>
+    <div id="wrapper" style="width:1020px; display:table;">
+    <div id="imageDiv" style="width:420px; display:table-cell;" >
+        <font style="vertical-align: inherit;">
+            <font style="vertical-align: inherit;font-size: 40px;position: relative;left: 150px;" >您選擇的圖片</font>
+        </font><br><br>
+        <img id="sourceImage" height="350px" style="position: relative;left: 150px;" src="https://i.ntdtv.com/assets/uploads/2019/10/1-473-600x400.jpg">
+    </div>
+    <div id="jsonOutput" style="width:700px; display:table-cell;position: relative;left: 200px;">
+        <font style="vertical-align: inherit;">
+            <font style="vertical-align: inherit;font-size: 40px;">結果回應</font>
+        </font><br><br>
+        <canvas id="barChart" width="350" height="250" style="position: relative;left: 200px;color: #000;font-size: 30px;"></canvas>
+    </div>
+</div>
+</body>
+</html>
